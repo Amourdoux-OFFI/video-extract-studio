@@ -1,0 +1,22 @@
+# 核心 Web 框架
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+aiofiles>=23.2
+
+# HTTP 与模型
+httpx>=0.27
+pydantic>=2.6
+
+# 平台解析
+f2>=0.0.1.7            # 抖音（a_bogus 签名 + Token 生成）
+yt-dlp>=2024.4.9       # 通用兜底
+
+# Cookie
+browser-cookie3>=0.19
+
+# 桌面窗口（可选，缺失时自动降级为浏览器应用模式）
+pywebview>=5.0
+
+# 打包（仅开发期需要）
+# pyinstaller>=6.0

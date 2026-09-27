@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="referrer" content="no-referrer">
+<title>视频提取 · 剪辑压缩</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================ 顶部标题栏 ============================ -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2.5" y="5" width="19" height="14" rx="3"></rect>
+          <path d="M10 9.2l5 2.8-5 2.8z" fill="currentColor" stroke="none"></path>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <strong>视频提取 · 剪辑压缩</strong>
+        <small>抖音 / 哔哩哔哩 链接解析下载 · 本地无损剪辑与压缩</small>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="sse-status is-off" id="sse-status" title="后端事件流连接状态">
+        <i class="dot" aria-hidden="true"></i><span id="sse-text">连接中…</span>
+      </span>
+      <button class="btn btn-ghost btn-sm" id="btn-settings" type="button">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path>
+        </svg>
+        设置
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================== 标签页 ============================== -->
+  <nav class="tabs" id="tabs" role="tablist" aria-label="功能标签页">
+    <button class="tab is-active" data-tab="parse" role="tab" type="button" aria-selected="true">
+      <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10.6 13.4a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.6-5.7l-1.6 1.6"></path>
+        <path d="M13.4 10.6a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 0 0 5.6 5.7l1.6-1.6"></path>
+      </svg>
+      解析下载
+    </button>
+    <button class="tab" data-tab="import" role="tab" type="button" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l1.8 2.2h8A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"></path>
+      </svg>
+      本地导入
+    </button>
+    <button class="tab" data-tab="edit" role="tab" type="button" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="6" cy="6.5" r="2.5"></circle>
+        <circle cx="6" cy="17.5" r="2.5"></circle>
+        <path d="M8.2 8.2 20 18M8.2 15.8 20 6"></path>
+      </svg>
+      剪辑压缩
+    </button>
+  </nav>
+
+  <main class="content" id="content">
+
+    <!-- ======================= 标签页 1：解析下载 ======================= -->
+    <section class="page is-active" id="page-parse" role="tabpanel" aria-label="解析下载">
+
+      <div class="surface">
+        <div class="surface-head">
+          <h2>粘贴分享文本</h2>
+          <span class="hint">支持一次粘贴多条，程序会自动识别其中的链接</span>
+        </div>
+        <textarea id="parse-input" class="textarea" rows="6" spellcheck="false"
+          placeholder="直接把抖音/B站的分享文本整段粘进来，可一次粘多条，自动识别链接"></textarea>
+        <div class="surface-foot">
+          <button class="btn btn-primary" id="btn-parse" type="button">
+            <span class="spinner" hidden aria-hidden="true"></span><span class="btn-label">开始解析</span>
+          </button>
+          <button class="btn btn-ghost" id="btn-parse-clear" type="button">清空</button>
+          <span class="hint" id="parse-status"></span>
+          <span class="spacer"></span>
+          <span class="hint" id="download-dir-hint"></span>
+        </div>
+      </div>
+
+      <div class="result-toolbar" id="parse-toolbar" hidden>
+        <span class="count" id="parse-count"></span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost btn-sm" id="btn-select-all" type="button">全选</button>
+        <button class="btn btn-ghost btn-sm" id="btn-select-invert" type="button">反选</button>
+        <button class="btn btn-primary btn-sm" id="btn-download" type="button" disabled>
+          <span class="spinner" hidden aria-hidden="true"></span><span class="btn-label">下载选中(0)</span>
+        </button>
+      </div>
+
+      <div class="grid" id="parse-results"></div>
+
+      <details class="fold fold-warn" id="unrecognized-box" hidden>
+        <summary>未识别的链接 <span class="pill pill-warn" id="unrecognized-count">0</span></summary>
+        <ul class="link-list" id="unrecognized-list"></ul>
+      </details>
+
+      <details class="fold fold-danger" id="parse-errors" hidden>
+        <summary>解析出错的链接 <span class="pill pill-danger" id="parse-errors-count">0</span></summary>
+        <ul class="link-list" id="parse-errors-list"></ul>
+      </details>
+
+      <div class="empty" id="parse-empty">
+        <svg class="empty-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2.5" y="5" width="19" height="14" rx="3"></rect>
+          <path d="M10 9.2l5 2.8-5 2.8z"></path>
+        </svg>
+        <p class="empty-title">还没有解析结果</p>
+        <p class="empty-sub">把抖音或 B 站的分享文本整段粘进上面的输入框，点击「开始解析」。<br>抖音短链、b23.tv 短链、含中文说明的整段分享文案都可以。</p>
+      </div>
+
+    </section>
+
+    <!-- ======================= 标签页 2：本地导入 ======================= -->
+    <section class="page" id="page-import" role="tabpanel" aria-label="本地导入">
+
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="拖入视频文件或点击选择文件">
+        <svg class="dz-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 16V4"></path>
+          <path d="M7.5 8.5 12 4l4.5 4.5"></path>
+          <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"></path>
+        </svg>
+        <p class="dz-title">拖入视频文件，或点击选择文件</p>
+        <p class="dz-sub">支持 mp4 / mkv / mov / flv / webm / ts / avi 等常见格式，可一次拖入多个</p>
+        <p class="dz-busy" id="import-busy" hidden><span class="spinner" aria-hidden="true"></span>正在读取文件信息…</p>
+      </div>
+
+      <div class="grid" id="import-results"></div>
+
+      <div class="empty" id="import-empty">
+        <p class="empty-title">尚未导入任何文件</p>
+        <p class="empty-sub">点击上方区域会调起 Windows 原生文件选择框；也可以直接把资源管理器里的文件拖进来。</p>
+      </div>
+
+    </section>
+
+    <!-- ======================= 标签页 3：剪辑压缩 ======================= -->
+    <section class="page" id="page-edit" role="tabpanel" aria-label="剪辑压缩">
+
+      <div class="surface">
+        <div class="surface-head">
+          <h2>输入文件</h2>
+          <span class="hint">可直接粘贴绝对路径，例如 D:\videos\input.mp4</span>
+        </div>
+        <div class="path-row">
+          <input type="text" id="edit-path" class="input mono" spellcheck="false" placeholder="D:\videos\input.mp4">
+          <button class="btn" id="btn-pick-input" type="button">选择文件</button>
+          <button class="btn btn-ghost" id="btn-load-input" type="button">载入</button>
+        </div>
+        <div class="banner banner-danger" id="src-warn" hidden></div>
+      </div>
+
+      <div class="edit-layout">
+
+        <div class="edit-left">
+          <div class="player">
+            <video id="preview" controls preload="metadata" playsinline></video>
+            <div class="player-empty" id="player-empty">尚未载入文件</div>
+          </div>
+          <div class="src-info" id="src-info">
+            <div class="kv-row"><span class="kv-key">状态</span><span class="kv-val muted">等待载入文件…</span></div>
+          </div>
+        </div>
+
+        <div class="edit-right">
+
+          <!-- ---------------------------- 裁剪区 ---------------------------- -->
+          <section class="block">
+            <header class="block-head">
+              <h3>裁剪片段</h3>
+              <span class="spacer"></span>
+              <label class="check">
+                <input type="checkbox" id="trim-enabled">
+                <span>启用裁剪</span>
+              </label>
+            </header>
+
+            <div class="trim-top">
+              <label class="field">
+                <span>起点（秒）</span>
+                <input type="number" id="trim-start" class="input" min="0" step="0.1" value="0">
+              </label>
+              <label class="field">
+                <span>终点（秒）</span>
+                <input type="number" id="trim-end" class="input" min="0" step="0.1" value="0">
+              </label>
+              <div class="trim-buttons">
+                <button class="btn btn-ghost btn-sm" id="btn-set-start" type="button">设起点=当前播放位置</button>
+                <button class="btn btn-ghost btn-sm" id="btn-set-end" type="button">设终点=当前播放位置</button>
+              </div>
+            </div>
+
+            <div class="range" id="trim-range">
+              <div class="range-rail" aria-hidden="true"></div>
+              <div class="range-fill" id="trim-fill" aria-hidden="true"></div>
+              <div class="range-kf" id="trim-kf" aria-hidden="true"></div>
+              <input type="range" id="trim-start-range" min="0" max="100" step="0.1" value="0" aria-label="裁剪起点">
+              <input type="range" id="trim-end-range" min="0" max="100" step="0.1" value="0" aria-label="裁剪终点">
+            </div>
+
+            <div class="trim-meta">
+              <span class="hint" id="trim-length">片段时长 0.0s</span>
+              <span class="spacer"></span>
+              <span class="hint" id="kf-status"></span>
+              <span class="hint hint-accent" id="trim-snap-hint"></span>
+            </div>
+
+            <div class="radio-row" id="trim-modes">
+              <label class="radio"><input type="radio" name="trim-mode" value="smart" checked><span>智能无损</span></label>
+              <label class="radio"><input type="radio" name="trim-mode" value="lossless"><span>强制无损</span></label>
+              <label class="radio"><input type="radio" name="trim-mode" value="precise"><span>帧精确</span></label>
+            </div>
+            <p class="block-desc" id="trim-mode-desc"></p>
+          </section>
+
+          <!-- ---------------------------- 压缩区 ---------------------------- -->
+          <section class="block">
+            <header class="block-head">
+              <h3>压缩输出</h3>
+            </header>
+
+            <div class="radio-row" id="compress-modes">
+              <label class="radio"><input type="radio" name="compress-mode" value="crf" checked><span>CRF 质量优先</span></label>
+              <label class="radio"><input type="radio" name="compress-mode" value="target"><span>目标体积</span></label>
+              <label class="radio"><input type="radio" name="compress-mode" value="none"><span>不压缩</span></label>
+            </div>
+
+            <div class="sub-block" id="crf-box">
+              <div class="radio-row">
+                <label class="radio"><input type="radio" name="crf" value="18"><span>18 视觉无损</span></label>
+                <label class="radio"><input type="radio" name="crf" value="21" checked><span>21 推荐</span></label>
+                <label class="radio"><input type="radio" name="crf" value="24"><span>24 小体积</span></label>
+              </div>
+              <p class="block-desc" id="crf-desc"></p>
+            </div>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>编码速度 preset</span>
+                <select class="select" id="preset">
+                  <option value="ultrafast">ultrafast（最快，体积最大）</option>
+                  <option value="fast">fast</option>
+                  <option value="medium" selected>medium（推荐）</option>
+                  <option value="slow">slow（最慢，体积最小）</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>最大分辨率</span>
+                <select class="select" id="max-height">
+                  <option value="0" selected>保持原分辨率</option>
+                  <option value="2160">2160p (4K)</option>
+                  <option value="1440">1440p (2K)</option>
+                  <option value="1080">1080p</option>
+                  <option value="720">720p</option>
+                  <option value="480">480p</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>封装格式</span>
+                <select class="select" id="container">
+                  <option value="mp4" selected>mp4</option>
+                  <option value="mkv">mkv</option>
+                </select>
+              </label>
+              <label class="field" id="target-box" hidden>
+                <span>目标体积（MB）</span>
+                <input type="number" id="target-mb" class="input" min="1" step="1" value="50" placeholder="例如 50">
+              </label>
+            </div>
+
+            <div class="check-row">
+              <label class="check"><input type="checkbox" id="mute"><span>静音（去掉音轨）</span></label>
+              <label class="check" id="nvenc-check">
+                <input type="checkbox" id="use-nvenc"><span>使用 NVIDIA 硬件加速（NVENC）</span>
+              </label>
+              <span class="hint" id="nvenc-hint"></span>
+            </div>
+          </section>
+
+          <!-- --------------------------- 去水印区 --------------------------- -->
+          <details class="fold fold-wm" id="wm-panel" open>
+            <summary>
+              去水印（B站投稿水印等）
+              <span class="pill" id="wm-count-pill">未启用</span>
+              <span class="spacer"></span>
+              <span class="hint" id="wm-summary-hint" title="水印位置每个视频都不一样，还可能是移动的">水印位置因视频而异，可能随时间漂移</span>
+            </summary>
+
+            <div class="wm-body">
+
+              <p class="banner banner-warn" id="wm-lock" hidden></p>
+
+              <div class="check-row">
+                <label class="check">
+                  <input type="checkbox" id="wm-enable">
+                  <span>启用去水印</span>
+                </label>
+                <span class="hint" id="wm-enable-hint"></span>
+              </div>
+
+              <div class="wm-canvas-wrap" id="wm-canvas">
+                <img id="wm-frame" alt="当前帧预览" draggable="false">
+                <div class="wm-layer" id="wm-layer"></div>
+                <div class="wm-canvas-hint" id="wm-canvas-hint">请先载入视频文件</div>
+              </div>
+
+              <div class="wm-time-row">
+                <span class="hint">当前帧时间</span>
+                <input type="range" class="wm-range" id="wm-time" min="0" max="1" step="0.1" value="0" aria-label="当前帧时间">
+                <span class="hint mono wm-time-label" id="wm-time-label">0.0s</span>
+                <button class="btn btn-ghost btn-sm" id="wm-now" type="button">用播放位置</button>
+              </div>
+
+              <div class="wm-actions">
+                <button class="btn btn-primary btn-sm" id="wm-detect" type="button">
+                  <span class="spinner" hidden aria-hidden="true"></span><span class="btn-label">自动检测水印</span>
+                </button>
+                <button class="btn btn-sm" id="wm-add" type="button">添加区域</button>
+                <button class="btn btn-ghost btn-sm" id="wm-del" type="button">删除选中区域</button>
+                <button class="btn btn-ghost btn-sm" id="wm-clear" type="button">清空全部区域</button>
+                <button class="btn btn-ghost btn-sm" id="wm-compare" type="button">对比预览</button>
+                <span class="hint" id="wm-detect-status"></span>
+              </div>
+
+              <div class="radio-row" id="wm-mode">
+                <label class="radio"><input type="radio" name="wm-mode" value="auto" checked><span>自动（推荐）</span></label>
+                <label class="radio"><input type="radio" name="wm-mode" value="delogo"><span>插值修复</span></label>
+                <label class="radio"><input type="radio" name="wm-mode" value="blur"><span>模糊</span></label>
+                <label class="radio"><input type="radio" name="wm-mode" value="mosaic"><span>马赛克</span></label>
+              </div>
+              <p class="block-desc" id="wm-mode-desc"></p>
+
+              <div class="wm-strength-row">
+                <span class="hint">强度</span>
+                <input type="range" class="wm-range wm-range-strength" id="wm-strength" min="1" max="5" step="1" value="3" aria-label="去水印强度">
+                <span class="pill" id="wm-strength-val">3</span>
+                <span class="hint" id="wm-strength-hint"></span>
+              </div>
+
+              <div class="wm-list-head">
+                <span class="hint" id="wm-stat">共 0 个区域（其中 0 个为限时区域）</span>
+                <span class="spacer"></span>
+                <span class="hint">坐标为原始视频像素；起始 / 结束为该区域生效的秒数</span>
+              </div>
+              <div class="wm-table-wrap">
+                <table class="wm-table">
+                  <thead>
+                    <tr>
+                      <th class="wm-td-no">#</th>
+                      <th>X</th>
+                      <th>Y</th>
+                      <th>宽</th>
+                      <th>高</th>
+                      <th>起始(秒)</th>
+                      <th>结束(秒)</th>
+                      <th class="wm-td-act"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="wm-list"></tbody>
+                </table>
+              </div>
+
+              <span class="hint" id="wm-compare-status"></span>
+              <div class="wm-compare" id="wm-compare-box" hidden>
+                <figure>
+                  <img id="wm-cmp-src" alt="原始画面">
+                  <figcaption class="hint">原始</figcaption>
+                </figure>
+                <figure>
+                  <img id="wm-cmp-out" alt="去水印处理后的画面">
+                  <figcaption class="hint">处理后</figcaption>
+                </figure>
+              </div>
+
+              <p class="block-desc wm-note">B站投稿水印是转码时烧进画面的，所有清晰度都带，无法通过换码流规避，只能后期处理。插值修复适合背景较平整的画面；模糊/马赛克更适合水印压在复杂背景或贴边的情况。处理后该区域会有可察觉的痕迹，属于原理上的必然损失。</p>
+
+            </div>
+          </details>
+
+          <!-- ---------------------------- 操作区 ---------------------------- -->
+          <div class="action-bar">
+            <button class="btn" id="btn-estimate" type="button">
+              <span class="spinner" hidden aria-hidden="true"></span><span class="btn-label">预估输出</span>
+            </button>
+            <span class="estimate" id="estimate-result"></span>
+            <span class="spacer"></span>
+            <button class="btn btn-primary" id="btn-edit" type="button">
+              <span class="spinner" hidden aria-hidden="true"></span><span class="btn-label">开始处理</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================== 底部任务面板 ========================== -->
+  <footer class="tasks" id="task-panel">
+    <div class="tasks-head">
+      <button class="tasks-toggle" id="btn-tasks-toggle" type="button" aria-expanded="true" title="展开 / 收起任务列表">
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 15l6-6 6 6"></path>
+        </svg>
+        <strong>任务</strong>
+        <span class="pill" id="task-count">0</span>
+      </button>
+      <span class="tasks-summary" id="tasks-summary">暂无任务</span>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost btn-sm" id="btn-clear-finished" type="button">清除已完成</button>
+    </div>
+    <div class="tasks-body" id="tasks-body">
+      <div class="tasks-empty" id="tasks-empty">下载 / 导入 / 剪辑任务会显示在这里，进度通过后端事件流实时更新。</div>
+      <div class="task-list" id="task-list"></div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ============================== Toast ============================== -->
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<!-- ============================== 设置弹窗 ============================== -->
+<div class="modal" id="settings-modal" hidden>
+  <div class="modal-backdrop" data-close="1"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <header class="modal-head">
+      <h3 id="settings-title">设置</h3>
+      <button class="icon-btn" id="btn-settings-close" type="button" title="关闭" aria-label="关闭">✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="kv" id="settings-kv"></div>
+      <div class="form-grid">
+        <label class="field">
+          <span>下载目录</span>
+          <input type="text" id="set-download-dir" class="input mono" spellcheck="false">
+        </label>
+        <label class="field">
+          <span>输出目录</span>
+          <input type="text" id="set-output-dir" class="input mono" spellcheck="false">
+        </label>
+        <label class="field">
+          <span>并发任务数</span>
+          <input type="number" id="set-concurrency" class="input" min="1" max="16" step="1">
+        </label>
+        <label class="field">
+          <span>优先编码</span>
+          <select class="select" id="set-prefer-codec">
+            <option value="h264">h264（兼容性最好）</option>
+            <option value="hevc">hevc（体积更小）</option>
+            <option value="av1">av1</option>
+            <option value="any">不限制</option>
+          </select>
+        </label>
+      </div>
+      <div class="check-row">
+        <label class="check"><input type="checkbox" id="set-cookie-bilibili"><span>使用 B 站 Cookie（需登录态）</span></label>
+        <label class="check"><input type="checkbox" id="set-cookie-douyin"><span>使用抖音 Cookie</span></label>
+      </div>
+      <p class="block-desc">设置项保存后立即生效，部分改动需要重新发起任务。</p>
+    </div>
+    <footer class="modal-foot">
+      <button class="btn btn-ghost" id="btn-settings-reload" type="button">重新读取</button>
+      <span class="spacer"></span>
+      <button class="btn btn-primary" id="btn-settings-save" type="button">保存</button>
+    </footer>
+  </div>
+</div>
+
+<noscript>
+  <div class="noscript">该界面需要启用 JavaScript 才能使用。</div>
+</noscript>
+
+<script src="app.js"></script>
+</body>
+</html>

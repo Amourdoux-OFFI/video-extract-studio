@@ -1,0 +1,17 @@
+# 统一换行符：仓库内一律 LF，检出到 Windows 时 .bat 保持 CRLF
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制
+*.exe binary
+*.gz binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.ico binary
+
+# 避免 GitHub 语言统计被前端/文档淹没
+app/web/* linguist-vendored=false
+vendor/ffmpeg/LICENSE-GPLv3.txt linguist-vendored=true

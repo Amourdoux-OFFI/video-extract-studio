@@ -1,0 +1,52 @@
+# ===== 虚拟环境 =====
+.venv/
+venv/
+env/
+ENV/
+
+# ===== 打包产物 =====
+dist/
+build/
+*.spec
+
+# ===== 内置二进制（体积过大，由 tools/fetch_ffmpeg.py 获取，不入库）=====
+# 注意：vendor/ffmpeg/LICENSE-GPLv3.txt 与 README.md 必须入库，不要忽略
+vendor/ffmpeg/*.exe
+vendor/ffmpeg/ffmpeg
+vendor/ffmpeg/ffprobe
+vendor/ffmpeg/*.gz
+vendor/ffmpeg/*.zip
+
+# ===== 运行时目录（含下载的视频，涉及版权，绝不入库）=====
+downloads/
+output/
+temp/
+logs/
+.cache/
+config.json
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ===== 下载与打包中间产物 =====
+*.part
+*.part[0-9]
+*.m4s
+.pass_*
+*.log
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
