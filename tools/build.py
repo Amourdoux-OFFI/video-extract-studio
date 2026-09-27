@@ -112,7 +112,7 @@ def build() -> int:
 
 
 def postprocess() -> None:
-    """补充启动脚本与说明。"""
+    """补充启动脚本、说明与**必须随附的许可证文本**。"""
     target = DIST / APP_NAME
     if not target.exists():
         return
@@ -131,24 +131,50 @@ def postprocess() -> None:
         "启动：双击 VideoExtractor.exe 或 启动.bat\n\n"
         "功能：\n"
         "  1. 解析下载：把抖音 / B站的分享文本整段粘贴进来，可一次多条，\n"
-        "     自动识别链接，解析出无水印视频后选择清晰度下载为 mp4。\n"
+        "     自动识别链接，解析出视频后选择清晰度下载为 mp4。\n"
         "  2. 本地导入：拖入或选择电脑上的视频文件。\n"
-        "  3. 剪辑压缩：无损裁剪（关键帧吸附）/ 帧精确裁剪 / 保画质压缩，\n"
-        "     支持 NVIDIA 硬件加速（NVENC）。\n\n"
+        "  3. 剪辑压缩：无损裁剪（关键帧吸附）/ 帧精确裁剪 / 保画质压缩 /\n"
+        "     水印区域处理，支持 NVIDIA 硬件加速（NVENC）。\n\n"
         "输出目录：output\\（与主程序同级，首次运行自动创建）\n"
         "日志目录：logs\\\n\n"
         "说明：\n"
-        "  * 程序完全在本机运行，不上传任何数据。\n"
+        "  * 程序完全在本机运行，不上传任何数据，没有遥测。\n"
         "  * 首次运行会在本目录生成 config.json 配置文件。\n"
         "  * 若要解锁 B站 1080P60 / 4K 等会员画质，请在「设置」中填入\n"
-        "    浏览器里登录后的 B站 Cookie。\n\n"
-        "免责声明：本工具仅供个人学习与研究使用，请勿用于任何商业用途或\n"
-        "侵权行为。下载的内容版权归原作者所有，请遵守各平台的服务条款。\n",
+        "    浏览器里登录后的 B站 Cookie。本程序不绕过任何付费内容。\n\n"
+        "第三方组件：\n"
+        "  本程序内置 FFmpeg（GPLv3），以独立进程方式调用。\n"
+        "  许可证全文见 licenses\\ 目录，义务说明见 THIRD-PARTY-NOTICES.md。\n\n"
+        "免责声明：\n"
+        "  本工具仅供个人学习与研究使用，请勿用于任何商业用途或侵权行为。\n"
+        "  下载内容的版权归原作者所有，请遵守各平台的服务条款与当地法律。\n"
+        "  使用本工具产生的一切后果由使用者自行承担。\n",
         encoding="utf-8",
     )
+
+    # ---- 许可证：GPLv3 要求分发时必须随附，不能省略 ----
+    lic_dir = target / "licenses"
+    lic_dir.mkdir(exist_ok=True)
+    copies = [
+        (ROOT / "LICENSE", lic_dir / "LICENSE-MIT.txt"),
+        (ROOT / "THIRD-PARTY-NOTICES.md", target / "THIRD-PARTY-NOTICES.md"),
+        (ROOT / "README.md", target / "README.md"),
+        (ROOT / "vendor" / "ffmpeg" / "LICENSE-GPLv3.txt", lic_dir / "LICENSE-GPLv3.txt"),
+        (ROOT / "vendor" / "ffmpeg" / "README.md", lic_dir / "FFMPEG-README.md"),
+    ]
+    for src, dst in copies:
+        try:
+            if src.exists():
+                shutil.copy2(src, dst)
+            else:
+                print(f"  ! 缺少 {src.name}，未能随包分发")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  ! 复制 {src.name} 失败：{exc}")
+
     size = sum(f.stat().st_size for f in target.rglob("*") if f.is_file())
     print(f"\n打包完成：{target}")
     print(f"总体积：{size / 1048576:.1f} MB")
+    print("已随包分发许可证：licenses/LICENSE-MIT.txt、licenses/LICENSE-GPLv3.txt")
 
 
 if __name__ == "__main__":
