@@ -51,7 +51,7 @@
 ### 方式二：从源码运行
 
 ```bash
-git clone https://github.com/Amourdoux/video-extract-studio.git
+git clone https://github.com/Amourdoux-OFFI/video-extract-studio.git
 cd video-extract-studio
 
 python -m venv .venv
@@ -329,4 +329,4 @@ B站 Cookie 后重试。1080P60 / 4K / 8K 需要大会员，本工具不绕过�
 
 ## License
 
-[MIT](LICENSE) © 2026 Amourdoux
+[MIT](LICENSE) © 2026 Amourdoux-OFFI
