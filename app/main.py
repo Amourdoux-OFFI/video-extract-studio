@@ -205,41 +205,66 @@ def _find_browser() -> str | None:
     return None
 
 
+def _spawn_detached(args: list[str]) -> None:
+    """脱离父进程启动，避免占用管道 / 随父进程退出。"""
+    kw: dict = {
+        "stdin": subprocess.DEVNULL,
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+        "close_fds": True,
+    }
+    if os.name == "nt":
+        # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+        kw["creationflags"] = 0x00000008 | 0x00000200
+    subprocess.Popen(args, **kw)
+
+
 def open_browser_window(url: str) -> str:
+    """以「应用窗口」形式打开界面。
+
+    注意：**不要**给 Chrome 指定 --user-data-dir。实测在一台全新 profile 上
+    Chrome 会因为首次运行初始化而启动失败，窗口根本不出现（现象是 profile
+    目录建了、里面只有 Crashpad 文件、进程却不在）。复用默认 profile 时，
+    Chrome 会把这个 --app 窗口挂到已有实例上，反而最稳。
+    """
     exe = _find_browser()
     if exe:
         try:
-            profile = config.TEMP_DIR / "browser_profile"
-            profile.mkdir(parents=True, exist_ok=True)
-            subprocess.Popen(
-                [
-                    exe,
-                    f"--app={url}",
-                    "--window-size=1320,900",
-                    f"--user-data-dir={profile}",
-                    "--no-first-run",
-                    "--no-default-browser-check",
-                    "--disable-features=Translate",
-                ]
-            )
+            _spawn_detached([
+                exe,
+                f"--app={url}",
+                "--window-size=1320,900",
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--disable-features=Translate",
+            ])
+            log.info("已用 %s 以应用模式打开界面", exe)
             return exe
         except Exception as exc:  # noqa: BLE001
             log.warning("应用模式启动浏览器失败：%s", exc)
 
     import webbrowser
 
+    log.info("改用系统默认浏览器打开")
     webbrowser.open(url)
     return "default-browser"
 
 
-def launch(url: str, mode: str) -> None:
+def launch(url: str, mode: str) -> str:
+    """打开界面。返回**实际**生效的模式：'native' 或 'browser'。
+
+    这个返回值很关键：原生模式下 webview.start() 会一直阻塞到用户关窗，
+    返回即代表可以退出；而浏览器模式下窗口是独立进程，本函数立刻返回，
+    调用方必须继续维持服务存活，否则窗口刚打开服务就被关掉了。
+    """
     if mode in ("browser", "edge"):
         open_browser_window(url)
-        return
+        return "browser"
 
     try:
         import webview
 
+        t0 = time.time()
         window = webview.create_window(
             config.APP_NAME,
             url,
@@ -251,10 +276,25 @@ def launch(url: str, mode: str) -> None:
         )
         webview.start(debug=False)
         del window
-        return
+        # 秒退通常意味着窗口根本没显示出来（缺 WebView2 / 无桌面会话），
+        # 这种情况要当作失败处理，转浏览器模式，而不是直接退出程序。
+        if time.time() - t0 < 3.0:
+            raise RuntimeError("原生窗口启动后立即返回（可能缺少 WebView2 运行时）")
+        return "native"
     except Exception as exc:  # noqa: BLE001
-        log.warning("pywebview 启动失败（改用浏览器应用模式）：%s", exc)
+        log.warning("pywebview 不可用，改用浏览器应用模式：%s", exc)
+        say(f"  [提示] 原生窗口不可用（{exc}），已改用浏览器窗口")
         open_browser_window(url)
+        return "browser"
+
+
+def serve_until_exit(server, thread) -> None:
+    """保持服务存活，直到控制台被关闭或收到 Ctrl+C。"""
+    try:
+        while thread.is_alive() and not server.should_exit:
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        pass
 
 
 # --------------------------------------------------------------------------
@@ -306,13 +346,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.no_window:
         mode = {"native": "native", "browser": "browser"}.get(args.window, "auto")
-        launch(url, mode)
+        used = launch(url, mode)
+        if used == "browser":
+            # 浏览器窗口是独立进程，这里必须继续维持服务，
+            # 否则会出现「窗口刚打开、服务已经关掉」的空白页。
+            say("  界面已在浏览器窗口中打开；关闭本控制台窗口即可退出程序")
+            serve_until_exit(server, thread)
     else:
-        try:
-            while thread.is_alive():
-                time.sleep(0.5)
-        except KeyboardInterrupt:
-            pass
+        serve_until_exit(server, thread)
 
     server.should_exit = True
     thread.join(timeout=6)
